@@ -1,0 +1,30 @@
+buildscript {
+    repositories {
+	jcenter()
+	mavenCentral()
+    }
+    dependencies {
+        classpath 'com.bmuschko:gradle-docker-plugin:4.2.0'
+    }
+}
+
+apply plugin: 'com.bmuschko.docker-remote-api'
+
+import com.bmuschko.gradle.docker.tasks.image.*
+
+task makeDockerfile(type: Dockerfile) {
+    destFile = project.file('Dockerfile')
+    from 'python:alpine3.8'
+    runCommand('pip install flask')
+    runCommand('pip install xmlschema')
+    addFile('./app', '/xml_validator')
+    workingDir('/xml_validator')
+    exposePort 80
+    defaultCommand('python3', 'app.py')  
+}
+
+task createImage(type: DockerBuildImage) {
+    dependsOn makeDockerfile
+    inputDir = file('.')
+    tags.add('xml_validator')
+}
